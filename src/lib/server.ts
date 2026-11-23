@@ -99,6 +99,33 @@ export async function broadcast(channel: string, event: string, payload: unknown
   }
 }
 
+/* Customer accounts ------------------------------------------------- */
+
+export type AuthUser = { id: string; email: string; name: string; avatar: string | null };
+
+/**
+ * The signed-in customer, from the Supabase access token the browser sends as
+ * `Authorization: Bearer …`. The token is verified with Supabase Auth on every
+ * call; nothing from the browser is trusted on its own.
+ */
+export async function getUser(req: Request): Promise<AuthUser | null> {
+  if (!hasSupabase()) return null;
+  const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return null;
+  const { data, error } = await supa().auth.getUser(token);
+  if (error || !data.user) return null;
+  const u = data.user;
+  const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
+  return {
+    id: u.id,
+    email: u.email ?? "",
+    name: String(meta.full_name ?? meta.name ?? u.email ?? ""),
+    avatar: typeof meta.avatar_url === "string" ? meta.avatar_url : null,
+  };
+}
+
+export const signInRequired = () => Response.json({ error: "Sign in required" }, { status: 401 });
+
 /* Validation -------------------------------------------------------- */
 
 export const isEmail = (s: unknown): s is string =>

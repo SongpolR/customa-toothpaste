@@ -28,7 +28,8 @@ With no `.env.local` the demo works out of the box:
 | `/quiz` | 5 questions → recommended formula → open in composer |
 | `/cart` | one-time or refill every 2/3 months (−10%), tube return (−฿20), Stripe Checkout |
 | `/order/success` | confirms the Checkout Session with Stripe (works without a webhook) |
-| `/track` | order number + email → status steps, timeline, tracking number |
+| `/account` | Sign in with Google → orders + timelines, refills (stop/resume), saved formulas, support |
+| `/track` | order number + email → status steps, timeline, tracking number (guests) |
 | `/f/[slug]` | shared formula (recipe only — personal label text is stripped) |
 | `/admin` | lab console: stats, order list/filter/search, compounding sheet with % and grams, status + tracking + timeline notes, support inbox with quick replies |
 
@@ -42,6 +43,24 @@ Security model: RLS is on for every table with **no policies**, so the browser's
 or write data. All reads/writes go through Next.js API routes with the service-role key. Live chat
 uses Realtime **Broadcast**; a customer's channel name contains a random per-thread secret, and the
 admin inbox channel name is derived from the server secret.
+
+## Customer accounts (Sign in with Google)
+
+Accounts use Supabase Auth with the Google provider (needs the Supabase vars above).
+
+1. SQL Editor → run [`supabase/migrations/0002_accounts.sql`](supabase/migrations/0002_accounts.sql)
+   (links orders/chats to users, adds `saved_formulas`).
+2. Google Cloud → Google Auth Platform: create an OAuth client (*Web application*)
+   - Authorized JavaScript origin: your site, e.g. `http://localhost:3100`
+   - Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+   - While the app is in *Testing*, add test users (or publish the app).
+3. Supabase → Authentication → Sign In / Providers → Google: enable, paste Client ID + Secret.
+4. Supabase → Authentication → URL Configuration: Site URL = your site; add `<site>/**` to Redirect URLs.
+
+`/account` then shows the customer's orders (including earlier guest orders with the same email),
+refills they can stop/resume (Stripe `cancel_at_period_end`), saved formulas and support chat.
+Guests can still check out and track orders at `/track`. Account API routes verify the Supabase
+access token on every call (`Authorization: Bearer …`).
 
 ## Stripe (test mode)
 

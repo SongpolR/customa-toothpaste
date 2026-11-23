@@ -65,6 +65,7 @@ export async function POST(req: Request) {
         mode: "subscription",
         status: "paid",
         parent_order_id: parent.id,
+        user_id: parent.user_id,
         stripe_subscription_id: parent.stripe_subscription_id,
         stripe_session_id: invoice.id,
         subtotal: paid,
@@ -72,6 +73,14 @@ export async function POST(req: Request) {
         total: paid,
       });
       await addEvent(refill.id, "paid", `Refill of ${parent.order_no}`);
+      break;
+    }
+
+    case "customer.subscription.deleted": {
+      // refills ended (customer stopped them, or payment failed for good)
+      const sub = event.data.object as Stripe.Subscription;
+      const parent = await findOrderBySubscription(sub.id);
+      if (parent) await addEvent(parent.id, parent.status, "Refills ended");
       break;
     }
   }

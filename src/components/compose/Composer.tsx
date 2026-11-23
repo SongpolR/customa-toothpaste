@@ -6,7 +6,8 @@ import Link from "next/link";
 import { BASES, BOOSTERS, BOX_PAPERS, BOX_SHAPES, CAPS, HERBS, MAX_HERBS, SIZES, TUBE_PAPERS } from "@/lib/catalog";
 import { formulaNo, fmtTHB, suggestName, unitPrice, type Formula } from "@/lib/formula";
 import { useT, type DictKey } from "@/lib/i18n";
-import { useCart, useComposer } from "@/lib/store";
+import { useAuth, useCart, useComposer } from "@/lib/store";
+import { accountsEnabled, authFetch, signInWithGoogle } from "@/lib/auth-client";
 import { LabelCard, PasteSwatch, ProfileRadar } from "../ui";
 import type { View } from "./Preview";
 
@@ -34,6 +35,8 @@ export default function Composer() {
   const [added, setAdded] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "busy" | "copied" | "error">("idle");
   const [shareUrl, setShareUrl] = useState("");
+  const user = useAuth((s) => s.user);
+  const [saveState, setSaveState] = useState<"idle" | "busy" | "saved" | "error">("idle");
 
   const goStep = (s: Step) => {
     setStep(s);
@@ -75,6 +78,23 @@ export default function Composer() {
     } catch {
       setShareState("error");
     }
+  };
+
+  // keep the formula in the customer's account (signs in first; the composer
+  // state survives the Google redirect because it is persisted locally)
+  const saveToAccount = async () => {
+    if (!user) {
+      await signInWithGoogle("/compose");
+      return;
+    }
+    setSaveState("busy");
+    const res = await authFetch("/api/account/formulas", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ formula: f }),
+    }).catch(() => null);
+    setSaveState(res?.ok ? "saved" : "error");
+    if (res?.ok) setTimeout(() => setSaveState("idle"), 2400);
   };
 
   return (
@@ -323,6 +343,16 @@ export default function Composer() {
               <p className="field-label">{lang === "th" ? "ราคาต่อหลอด" : "Per tube"}</p>
               <p className="display text-3xl leading-none mt-1">{fmtTHB(price)}</p>
             </div>
+            {accountsEnabled() && (
+              <button
+                className="btn-ghost !px-4"
+                onClick={saveToAccount}
+                disabled={saveState === "busy" || f.herbs.length === 0}
+                title={user ? undefined : t("c.signInToSave")}
+              >
+                {saveState === "saved" ? t("c.saved") : saveState === "busy" ? "…" : t("c.save")}
+              </button>
+            )}
             <button className="btn-ghost !px-4" onClick={share} disabled={shareState === "busy"}>
               {shareState === "copied" ? t("c.copied") : t("c.share")}
             </button>
@@ -337,6 +367,16 @@ export default function Composer() {
           )}
           {shareUrl && shareState === "copied" && (
             <p className="label-text text-[11px] mt-2 break-all opacity-70">{shareUrl}</p>
+          )}
+          {saveState === "saved" && (
+            <p className="label-text text-[11px] mt-2">
+              <Link href="/account" className="underline underline-offset-4">{lang === "th" ? "ดูในบัญชี →" : "See it in your account →"}</Link>
+            </p>
+          )}
+          {saveState === "error" && (
+            <p className="label-text text-[11px] mt-2 text-[color:var(--danger)]">
+              {lang === "th" ? "บันทึกไม่สำเร็จ ลองอีกครั้ง" : "Couldn't save. Try again."}
+            </p>
           )}
           {shareState === "error" && (
             <p className="label-text text-[11px] mt-2 text-[color:var(--danger)]">

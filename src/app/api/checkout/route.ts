@@ -2,7 +2,7 @@ import type Stripe from "stripe";
 import { createOrder, markPaid, updateOrder, type OrderItem } from "@/lib/db";
 import { cartTotals, formulaNo, herbLine, linePrice, sanitizeFormula, sanitizePlan } from "@/lib/formula";
 import { SIZES, byId } from "@/lib/catalog";
-import { demoPaymentsAllowed, isEmail, siteUrl, str, stripe } from "@/lib/server";
+import { demoPaymentsAllowed, getUser, isEmail, siteUrl, str, stripe } from "@/lib/server";
 
 type InLine = { formula: unknown; qty: unknown; plan: unknown; returnTube: unknown };
 
@@ -42,7 +42,10 @@ export async function POST(req: Request) {
     return Response.json({ error: "Payments are not configured (STRIPE_SECRET_KEY missing)." }, { status: 503 });
   }
 
+  // signed-in customers get the order in their account (guests can still check out)
+  const user = await getUser(req);
   const order = await createOrder({
+    user_id: user?.id ?? null,
     email,
     customer_name: name,
     phone,

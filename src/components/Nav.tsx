@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useCart, useChatUI, useLang } from "@/lib/store";
+import { useAuth, useCart, useChatUI, useLang } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 
 export default function Nav() {
@@ -14,6 +14,7 @@ export default function Nav() {
   const chatOpen = useChatUI((s) => s.open);
   const chatUnread = useChatUI((s) => s.unread);
   const toggleChat = useChatUI((s) => s.toggle);
+  const user = useAuth((s) => s.user);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -34,7 +35,6 @@ export default function Nav() {
   const links = [
     { href: "/compose", label: t("nav.compose") },
     { href: "/quiz", label: t("nav.quiz") },
-    { href: "/track", label: t("nav.track") },
   ];
 
   return (
@@ -82,6 +82,29 @@ export default function Nav() {
               </span>
             )}
           </button>
+          {/* account: order tracking, refills and saved formulas live inside it */}
+          <Link
+            href="/account"
+            className={`flex items-center gap-2 ${path.startsWith("/account") ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+            aria-label={t("nav.account")}
+          >
+            {user?.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element -- Google avatar URL, tiny
+              <img src={user.avatar} alt="" width={22} height={22} className="w-[22px] h-[22px] rounded-full border border-line" referrerPolicy="no-referrer" />
+            ) : user ? (
+              <span className="w-[22px] h-[22px] rounded-full bg-ink text-paper grid place-items-center text-[11px] tracking-normal">
+                {user.name.slice(0, 1).toUpperCase()}
+              </span>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <circle cx="12" cy="8.5" r="3.5" />
+                <path d="M5 20c1.2-3.6 3.9-5.5 7-5.5s5.8 1.9 7 5.5" strokeLinecap="round" />
+              </svg>
+            )}
+            <span className={`hidden lg:inline whitespace-nowrap ${path.startsWith("/account") ? "underline underline-offset-8" : ""}`}>
+              {t("nav.account")}
+            </span>
+          </Link>
           <Link href="/cart" className="flex items-center gap-2" aria-label={t("nav.cart")}>
             <span className="hidden sm:inline whitespace-nowrap">{t("nav.cart")}</span>
             <span className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 border border-ink text-[11px] tracking-normal">
@@ -101,6 +124,7 @@ export default function Nav() {
               {l.label}
             </Link>
           ))}
+          <Link href="/account">{t("nav.account")}</Link>
         </div>
       )}
     </header>

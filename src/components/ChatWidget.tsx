@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { listen } from "@/lib/supabase-browser";
-import { useChatUI } from "@/lib/store";
+import { useAuth, useChatUI } from "@/lib/store";
+import { authFetch } from "@/lib/auth-client";
 
 type Msg = { id: number; sender: "customer" | "admin" | "system"; body: string; created_at: string };
 type Session = { id: string; token: string; channel: string };
@@ -63,6 +64,38 @@ export default function ChatWidget() {
     setSession(readSession());
   }, []);
 
+  // Signed in: pick up the customer's latest conversation from any device.
+  // Signing out forgets it on this device.
+  const user = useAuth((s) => s.user);
+  const hadUser = useRef(false);
+  useEffect(() => {
+    if (!user) {
+      if (hadUser.current) {
+        hadUser.current = false;
+        localStorage.removeItem(KEY);
+        msgsRef.current = [];
+        lastId.current = 0;
+        setMsgs([]);
+        setSession(null);
+      }
+      return;
+    }
+    hadUser.current = true;
+    if (readSession()) return;
+    let alive = true;
+    authFetch("/api/account/chat")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive || !d?.thread) return;
+        localStorage.setItem(KEY, JSON.stringify(d.thread));
+        setSession(d.thread);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [user]);
+
   // poll (always) + realtime (when Supabase is configured)
   useEffect(() => {
     if (!session) return;
@@ -105,7 +138,7 @@ export default function ChatWidget() {
     e.preventDefault();
     setBusy(true);
     setError("");
-    const r = await fetch("/api/chat", {
+    const r = await authFetch("/api/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...form, message: text, lang }),
@@ -163,12 +196,18 @@ export default function ChatWidget() {
 
           {!session ? (
             <form onSubmit={start} className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-              <label className="block"><span className="field-label">{t("cart.name")}</span>
-                <input className="field" required maxLength={60} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </label>
-              <label className="block"><span className="field-label">{t("cart.email")}</span>
-                <input className="field" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              </label>
+              {user ? (
+                <p className="text-[12.5px] opacity-70">{user.name} · {user.email}</p>
+              ) : (
+                <>
+                  <label className="block"><span className="field-label">{t("cart.name")}</span>
+                    <input className="field" required maxLength={60} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  </label>
+                  <label className="block"><span className="field-label">{t("cart.email")}</span>
+                    <input className="field" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  </label>
+                </>
+              )}
               <label className="block"><span className="field-label">{t("chat.orderOpt")}</span>
                 <input className="field uppercase" maxLength={20} value={form.order_no} onChange={(e) => setForm({ ...form, order_no: e.target.value })} placeholder="CU-XXXXX" />
               </label>

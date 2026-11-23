@@ -47,6 +47,8 @@ export type Order = {
   stripe_session_id: string | null;
   stripe_subscription_id: string | null;
   parent_order_id: string | null;
+  /** signed-in customer (Supabase Auth); null for guest orders */
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -63,6 +65,7 @@ export type ChatThread = {
   unread_admin: number;
   last_message: string | null;
   last_message_at: string;
+  user_id: string | null;
   created_at: string;
 };
 
@@ -165,6 +168,7 @@ export type NewOrder = Pick<
   stripe_subscription_id?: string | null;
   /** the Stripe object that paid this order: a Checkout Session, or the invoice for a refill */
   stripe_session_id?: string | null;
+  user_id?: string | null;
   status?: OrderStatus;
 };
 
@@ -178,6 +182,7 @@ export async function createOrder(o: NewOrder): Promise<Order> {
     stripe_session_id: o.stripe_session_id ?? null,
     stripe_subscription_id: o.stripe_subscription_id ?? null,
     parent_order_id: o.parent_order_id ?? null,
+    user_id: o.user_id ?? null,
     email: o.email,
     customer_name: o.customer_name,
     phone: o.phone,
@@ -314,13 +319,19 @@ export async function stats() {
 /* Chat                                                                */
 /* ------------------------------------------------------------------ */
 
-export async function createThread(t: { name: string; email: string; order_no: string | null }): Promise<ChatThread> {
+export async function createThread(t: {
+  name: string;
+  email: string;
+  order_no: string | null;
+  user_id?: string | null;
+}): Promise<ChatThread> {
   const token = randomBytes(18).toString("base64url");
+  const row = { ...t, user_id: t.user_id ?? null };
   if (hasSupabase()) {
-    return must(await supa().from("chat_threads").insert({ ...t, token }).select().single()) as ChatThread;
+    return must(await supa().from("chat_threads").insert({ ...row, token }).select().single()) as ChatThread;
   }
   const thread: ChatThread = {
-    ...t,
+    ...row,
     id: randomUUID(),
     token,
     status: "open",
@@ -386,3 +397,59 @@ export async function getMessages(thread_id: string, afterId = 0): Promise<ChatM
 }
 
 export type { CartLine };
+
+/* ------------------------------------------------------------------ */
+/* Customer accounts (Supabase Auth). Accounts need Supabase; in local  */
+/* demo mode these return nothing.                                      */
+/* ------------------------------------------------------------------ */
+
+/** escape LIKE wildcards so an email matches only itself (case-insensitively) */
+const likeExact = (s: string) => s.replace(/[\\%_]/g, (c) => "\\" + c);
+
+/** Orders placed while signed in, plus guest orders made with the same (verified) email. */
+export async function listOrdersForUser(userId: string, email: string): Promise<Order[]> {
+  if (!hasSupabase()) return [];
+  const [mine, byEmail] = await Promise.all([
+    supa().from("orders").select().eq("user_id", userId),
+    email ? supa().from("orders").select().ilike("email", likeExact(email)) : Promise.resolve({ data: [], error: null }),
+  ]);
+  const all = new Map<string, Order>();
+  for (const o of [...(must(mine) as Order[]), ...(must(byEmail) as Order[])]) all.set(o.id, o);
+  return [...all.values()]
+    .filter((o) => o.status !== "pending_payment")
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+/** true when this order belongs to the signed-in customer */
+export const ownsOrder = (o: Order, userId: string, email: string) =>
+  o.user_id === userId || (!!email && o.email.toLowerCase() === email.toLowerCase());
+
+export type SavedFormula = { id: string; user_id: string; name: string; config: Formula; created_at: string };
+
+export async function listSavedFormulas(userId: string): Promise<SavedFormula[]> {
+  if (!hasSupabase()) return [];
+  return must(
+    await supa().from("saved_formulas").select().eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
+  ) as SavedFormula[];
+}
+
+export async function addSavedFormula(userId: string, config: Formula): Promise<SavedFormula> {
+  if (!hasSupabase()) throw new Error("Accounts need Supabase");
+  return must(
+    await supa().from("saved_formulas").insert({ user_id: userId, name: config.name, config }).select().single(),
+  ) as SavedFormula;
+}
+
+export async function deleteSavedFormula(userId: string, id: string): Promise<void> {
+  if (!hasSupabase()) return;
+  must(await supa().from("saved_formulas").delete().eq("id", id).eq("user_id", userId));
+}
+
+/** the customer's most recent support conversation, to resume it on any device */
+export async function latestThreadForUser(userId: string): Promise<ChatThread | null> {
+  if (!hasSupabase()) return null;
+  const rows = must(
+    await supa().from("chat_threads").select().eq("user_id", userId).order("last_message_at", { ascending: false }).limit(1),
+  ) as ChatThread[];
+  return rows[0] ?? null;
+}

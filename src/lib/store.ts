@@ -142,3 +142,21 @@ export const useChatUI = create<ChatUIState>()((set) => ({
   toggle: () => set((s) => (s.open ? { open: false } : { open: true, unread: 0 })),
   addUnread: (n) => set((s) => ({ unread: s.unread + n })),
 }));
+
+/* Customer account -------------------------------------------------- */
+
+export type AccountUser = { id: string; email: string; name: string; avatar: string | null };
+
+type AuthState = {
+  user: AccountUser | null;
+  /** false until the stored session has been checked (avoid flashing "signed out") */
+  ready: boolean;
+  set: (user: AccountUser | null) => void;
+};
+
+/** Filled from Supabase Auth in Providers. */
+export const useAuth = create<AuthState>()((set) => ({
+  user: null,
+  ready: false,
+  set: (user) => set({ user, ready: true }),
+}));

@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FREE_SHIPPING_FROM, SIZES, byId } from "@/lib/catalog";
 import { cartTotals, fmtTHB, formulaNo, herbLine, linePrice, unitPrice, type Plan } from "@/lib/formula";
 import { useT } from "@/lib/i18n";
-import { useCart, useComposer } from "@/lib/store";
+import { useAuth, useCart, useComposer } from "@/lib/store";
+import { accountsEnabled, authFetch, signInWithGoogle } from "@/lib/auth-client";
 import { LabelCard } from "@/components/ui";
 
 const STRIPE_ON = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -23,6 +24,14 @@ function CartInner() {
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const user = useAuth((s) => s.user);
+  // signed in: start from the Google account's name and email (still editable)
+  useEffect(() => {
+    if (!user) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prefill once the session is known
+    setName((n) => n || user.name);
+    setEmail((e) => e || user.email);
+  }, [user]);
 
   const intervals = new Set(lines.filter((l) => l.plan !== "once").map((l) => l.plan));
   const mixed = intervals.size > 1;
@@ -32,7 +41,8 @@ function CartInner() {
     setBusy(true);
     setError("");
     try {
-      const res = await fetch("/api/checkout", {
+      // with the session token, so the order is linked to the account
+      const res = await authFetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ lines, customer: { name, email, phone } }),
@@ -141,6 +151,20 @@ function CartInner() {
               <div className="rule my-3" />
               <div className="flex justify-between items-baseline"><dt>{t("cart.total")}</dt><dd className="display text-4xl">{fmtTHB(totals.total)}</dd></div>
             </dl>
+
+            {user ? (
+              <p className="text-[12.5px] opacity-70">{t("cart.signedInAs").replace("{email}", user.email)}</p>
+            ) : (
+              accountsEnabled() && (
+                <button
+                  type="button"
+                  onClick={() => signInWithGoogle("/cart")}
+                  className="label-text text-[11.5px] underline underline-offset-4 opacity-75 hover:opacity-100 text-left"
+                >
+                  {t("cart.signInHint")} →
+                </button>
+              )
+            )}
 
             <div className="space-y-4">
               <label className="block"><span className="field-label">{t("cart.name")}</span>

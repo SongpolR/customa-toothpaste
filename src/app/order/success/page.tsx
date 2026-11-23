@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { fmtTHB } from "@/lib/formula";
 import { useT } from "@/lib/i18n";
-import { useCart } from "@/lib/store";
+import { useAuth, useCart } from "@/lib/store";
 
 type Summary = { order_no: string; email: string; status: string; total: number; mode: string; items: { name: string; qty: number; plan: string }[] };
 
 function SuccessInner() {
   const { t, lang } = useT();
+  const user = useAuth((s) => s.user);
   const params = useSearchParams();
   const clear = useCart((s) => s.clear);
   const [order, setOrder] = useState<Summary | null>(null);
@@ -61,7 +62,10 @@ function SuccessInner() {
             <li className="flex justify-between py-3"><span>{t("cart.total")}</span><span>{fmtTHB(order.total)}</span></li>
           </ul>
           <div className="mt-10 flex flex-wrap gap-3">
-            <Link href={`/track?no=${order.order_no}&email=${encodeURIComponent(order.email)}`} className="btn-primary">
+            <Link
+              href={user ? "/account" : `/track?no=${order.order_no}&email=${encodeURIComponent(order.email)}`}
+              className="btn-primary"
+            >
               {t("ok.track")} →
             </Link>
             <Link href="/compose" className="btn-ghost">{t("hero.cta")}</Link>
