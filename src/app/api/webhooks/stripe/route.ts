@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { addEvent, createOrder, findOrderBySubscription, markPaid } from "@/lib/db";
+import { addEvent, createOrder, findOrderByStripeRef, findOrderBySubscription, markPaid } from "@/lib/db";
 import { cartTotals } from "@/lib/formula";
 import { stripe } from "@/lib/server";
 
@@ -50,8 +50,13 @@ export async function POST(req: Request) {
       if (!subId) break;
       const parent = await findOrderBySubscription(typeof subId === "string" ? subId : subId.id);
       if (!parent) break;
+      // Stripe retries webhooks: one refill order per invoice, however often it arrives
+      if (await findOrderByStripeRef(invoice.id!)) break;
       const items = parent.items.filter((i) => i.plan !== "once");
-      const totals = cartTotals(items.map((i, n) => ({ ...i, id: String(n) })));
+      const { subtotal } = cartTotals(items.map((i, n) => ({ ...i, id: String(n) })));
+      // Record what Stripe actually charged. Shipping was a one-time line on the
+      // first invoice, so refills carry no shipping charge.
+      const paid = Math.round((invoice.amount_paid ?? 0) / 100) || subtotal;
       const refill = await createOrder({
         email: parent.email,
         customer_name: parent.customer_name,
@@ -61,7 +66,10 @@ export async function POST(req: Request) {
         status: "paid",
         parent_order_id: parent.id,
         stripe_subscription_id: parent.stripe_subscription_id,
-        ...totals,
+        stripe_session_id: invoice.id,
+        subtotal: paid,
+        shipping: 0,
+        total: paid,
       });
       await addEvent(refill.id, "paid", `Refill of ${parent.order_no}`);
       break;

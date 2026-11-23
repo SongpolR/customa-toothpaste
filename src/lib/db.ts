@@ -160,7 +160,13 @@ export async function getFormula(slug: string): Promise<Formula | null> {
 export type NewOrder = Pick<
   Order,
   "email" | "customer_name" | "phone" | "items" | "subtotal" | "shipping" | "total" | "mode"
-> & { parent_order_id?: string | null; stripe_subscription_id?: string | null; status?: OrderStatus };
+> & {
+  parent_order_id?: string | null;
+  stripe_subscription_id?: string | null;
+  /** the Stripe object that paid this order: a Checkout Session, or the invoice for a refill */
+  stripe_session_id?: string | null;
+  status?: OrderStatus;
+};
 
 export async function createOrder(o: NewOrder): Promise<Order> {
   const row = {
@@ -169,7 +175,7 @@ export async function createOrder(o: NewOrder): Promise<Order> {
     status: o.status ?? ("pending_payment" as OrderStatus),
     tracking_no: null,
     shipping_address: null,
-    stripe_session_id: null,
+    stripe_session_id: o.stripe_session_id ?? null,
     stripe_subscription_id: o.stripe_subscription_id ?? null,
     parent_order_id: o.parent_order_id ?? null,
     email: o.email,
@@ -206,6 +212,12 @@ export async function findOrder(order_no: string, email: string): Promise<Order 
     return o && o.email.toLowerCase() === em ? o : null;
   }
   return clone(local().orders.find((o) => o.order_no === no && o.email.toLowerCase() === em));
+}
+
+/** Order paid by a given Stripe object (Checkout Session id, or invoice id for refills). */
+export async function findOrderByStripeRef(ref: string): Promise<Order | null> {
+  if (hasSupabase()) return must(await supa().from("orders").select().eq("stripe_session_id", ref).maybeSingle()) as Order | null;
+  return clone(local().orders.find((o) => o.stripe_session_id === ref));
 }
 
 export async function findOrderBySubscription(subId: string): Promise<Order | null> {
