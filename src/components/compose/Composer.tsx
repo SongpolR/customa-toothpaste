@@ -338,25 +338,28 @@ export default function Composer() {
 
         {/* ---------- price bar ---------- */}
         <div className="sticky bottom-0 bg-paper/95 backdrop-blur border-t border-line px-5 md:px-10 py-4">
-          <div className="flex items-center gap-4">
+          {/* phones: price + add to cart on one row, save/share underneath */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
             <div className="mr-auto">
               <p className="field-label">{lang === "th" ? "ราคาต่อหลอด" : "Per tube"}</p>
               <p className="display text-3xl leading-none mt-1">{fmtTHB(price)}</p>
             </div>
-            {accountsEnabled() && (
-              <button
-                className="btn-ghost !px-4"
-                onClick={saveToAccount}
-                disabled={saveState === "busy" || f.herbs.length === 0}
-                title={user ? undefined : t("c.signInToSave")}
-              >
-                {saveState === "saved" ? t("c.saved") : saveState === "busy" ? "…" : t("c.save")}
+            <div className="order-last w-full flex gap-3 sm:order-none sm:w-auto">
+              {accountsEnabled() && (
+                <button
+                  className="btn-ghost !px-4 flex-1 sm:flex-none whitespace-nowrap"
+                  onClick={saveToAccount}
+                  disabled={saveState === "busy" || f.herbs.length === 0}
+                  title={user ? undefined : t("c.signInToSave")}
+                >
+                  {saveState === "saved" ? t("c.saved") : saveState === "busy" ? "…" : t("c.save")}
+                </button>
+              )}
+              <button className="btn-ghost !px-4 flex-1 sm:flex-none whitespace-nowrap" onClick={share} disabled={shareState === "busy"}>
+                {shareState === "copied" ? t("c.copied") : t("c.share")}
               </button>
-            )}
-            <button className="btn-ghost !px-4" onClick={share} disabled={shareState === "busy"}>
-              {shareState === "copied" ? t("c.copied") : t("c.share")}
-            </button>
-            <button className="btn-primary" onClick={addToCart} disabled={f.herbs.length === 0}>
+            </div>
+            <button className="btn-primary whitespace-nowrap" onClick={addToCart} disabled={f.herbs.length === 0}>
               {added ? t("c.added") : t("c.add")}
             </button>
           </div>

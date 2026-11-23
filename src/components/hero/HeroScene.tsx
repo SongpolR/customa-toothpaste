@@ -209,14 +209,25 @@ function Rig({ progress }: { progress: Progress }) {
     const fit = ease(seg(p, 0.955, 0.99));
     const END_R = CAM.radius[CAM.radius.length - 1][1];
     const END_SHIFT = CAM.shift[CAM.shift.length - 1][1];
-    const radius = lerp(track(CAM.radius, p) * (narrow ? 1.55 : 1), track(CAM.radius, p) + fitR - END_R, fit);
+    // Close-ups (label, brushing) are framed for wide screens; on narrow or
+    // portrait screens back off just enough to keep the whole row of teeth in view.
+    const minR = (PORTRAIT.teethWidth * 1.15) / 2 / (T * aspect);
+    // phones, first screen: the headline fills the lower half, so the tube sits
+    // smaller and higher until the story starts
+    const introK = 1 - seg(p, 0.03, 0.08);
+    // tablets in portrait: framing was designed for roughly square-or-wider
+    // screens, so back off until the visible width matches that
+    const portraitK = Math.max(1, 1.1 / aspect);
+    const baseR = Math.max(track(CAM.radius, p) * (narrow ? 1.55 * (1 + 0.4 * introK) : portraitK), minR);
+    const radius = lerp(baseR, track(CAM.radius, p) + fitR - END_R, fit);
     // parallax scales with distance, so close-ups don't swim
     const par = Math.min(1, radius / 9.2);
     const mx = state.pointer.x * 0.35 * par;
     const my = state.pointer.y * 0.25 * par;
     camera.position.set(Math.sin(ang) * radius + mx, track(CAM.y, p) + my, Math.cos(ang) * radius);
-    // on phones the text sits at the bottom, so lift the scene above it
-    const phoneLift = narrow ? -0.9 - (1 - seg(p, 0.03, 0.08)) * 0.5 : 0;
+    // on phones the text sits at the bottom, so lift the scene above it —
+    // by an amount proportional to the framing, or close-ups slide out of view
+    const phoneLift = narrow ? (-0.9 - introK * 1.5) * Math.min(1, radius / 9.2) : 0;
     look.set(0, track(CAM.look, p) + phoneLift, 0);
     camera.lookAt(look);
     if (!narrow) camera.translateX(track(CAM.shift, p) + (fitShift - END_SHIFT) * fit);

@@ -175,18 +175,18 @@ function Console({ session, onLogout }: { session: Session; onLogout: () => void
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-line bg-card">
-        <div className="px-5 md:px-8 h-14 flex items-center gap-6 label-text text-[11px] tracking-[0.18em] uppercase">
-          <span className="keep-tracking text-[13px] tracking-[0.4em] font-semibold">CUSTOMA</span>
+        <div className="px-4 md:px-8 h-14 flex items-center gap-3 sm:gap-6 label-text text-[11px] tracking-[0.18em] uppercase whitespace-nowrap">
+          <span className="keep-tracking text-[13px] tracking-[0.25em] sm:tracking-[0.4em] font-semibold">CUSTOMA</span>
           <span className="opacity-50 hidden sm:inline">Lab console</span>
-          <nav className="flex gap-1 ml-4">
+          <nav className="flex gap-1 sm:ml-4">
             {(["orders", "support"] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 ${tab === t ? "bg-ink text-paper" : "opacity-70 hover:opacity-100"}`}>
+              <button key={t} onClick={() => setTab(t)} className={`px-2 sm:px-3 py-1.5 ${tab === t ? "bg-ink text-paper" : "opacity-70 hover:opacity-100"}`}>
                 {t === "orders" ? "Orders" : "Support"}
                 {t === "support" && unread > 0 && <span className="ml-2 inline-flex w-5 h-5 items-center justify-center rounded-full bg-[color:var(--danger)] text-paper text-[10px]">{unread}</span>}
               </button>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-3 sm:gap-4">
             <span className="hidden md:inline opacity-50">{session.backend} · {session.payments}</span>
             <Link href="/" className="opacity-70 hover:opacity-100">Site ↗</Link>
             <button
