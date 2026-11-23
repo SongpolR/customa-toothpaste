@@ -77,6 +77,13 @@ alter table public.order_events  enable row level security;
 alter table public.chat_threads  enable row level security;
 alter table public.chat_messages enable row level security;
 
+-- Only the server (service_role key) talks to these tables. Newer projects no
+-- longer grant API roles access to new tables automatically, so grant it here;
+-- anon/authenticated get nothing (and RLS has no policies for them anyway).
+grant usage on schema public to service_role;
+grant select, insert, update, delete on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;
+
 -- keep updated_at fresh
 create or replace function public.touch_updated_at() returns trigger
 language plpgsql as $$ begin new.updated_at = now(); return new; end $$;

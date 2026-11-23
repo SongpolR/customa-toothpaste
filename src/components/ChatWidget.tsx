@@ -39,18 +39,22 @@ export default function ChatWidget() {
     openRef.current = open;
   }, [open]);
 
+  // Messages are merged against a ref, not inside a setState updater: React may
+  // run updaters twice, which double-counted unread replies and updated the
+  // header (another component) during render.
+  const msgsRef = useRef<Msg[]>([]);
   const merge = useCallback((incoming: Msg[]) => {
     if (!incoming.length) return;
-    setMsgs((prev) => {
-      const seen = new Set(prev.map((m) => m.id));
-      const fresh = incoming.filter((m) => !seen.has(m.id));
-      if (!fresh.length) return prev;
-      // history loaded on page open is not "new"; only count replies that arrive later
-      if (!openRef.current && prev.length > 0) addUnread(fresh.filter((m) => m.sender !== "customer").length);
-      const all = [...prev, ...fresh].sort((a, b) => a.id - b.id);
-      lastId.current = all[all.length - 1].id;
-      return all;
-    });
+    const prev = msgsRef.current;
+    const seen = new Set(prev.map((m) => m.id));
+    const fresh = incoming.filter((m) => !seen.has(m.id));
+    if (!fresh.length) return;
+    // history loaded on page open is not "new"; only count replies that arrive later
+    if (!openRef.current && prev.length > 0) addUnread(fresh.filter((m) => m.sender !== "customer").length);
+    const all = [...prev, ...fresh].sort((a, b) => a.id - b.id);
+    msgsRef.current = all;
+    lastId.current = all[all.length - 1].id;
+    setMsgs(all);
   }, [addUnread]);
 
   useEffect(() => {
