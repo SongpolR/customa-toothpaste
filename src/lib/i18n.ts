@@ -179,6 +179,7 @@ const dict = {
   "acct.perks4": { en: "Your support chat follows you to any device", th: "แชทกับทีมงานต่อได้จากทุกอุปกรณ์" },
   "acct.guestTrack": { en: "Ordered as a guest? Track with your order number", th: "สั่งแบบไม่มีบัญชี? ติดตามด้วยเลขออเดอร์" },
   "acct.signOut": { en: "Sign out", th: "ออกจากระบบ" },
+  "acct.staff": { en: "Staff console", th: "หลังร้าน" },
   "acct.tab.orders": { en: "Orders", th: "ออเดอร์" },
   "acct.tab.refills": { en: "Refills", th: "การส่งซ้ำ" },
   "acct.tab.formulas": { en: "Saved formulas", th: "สูตรที่บันทึก" },

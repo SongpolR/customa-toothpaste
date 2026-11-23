@@ -124,6 +124,15 @@ export async function getUser(req: Request): Promise<AuthUser | null> {
   };
 }
 
+/** Staff = signed-in Google accounts listed in ADMIN_EMAILS (comma-separated, kept in .env.local). */
+export function isAdminEmail(email: string) {
+  const staff = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return !!email && staff.includes(email.toLowerCase());
+}
+
 export const signInRequired = () => Response.json({ error: "Sign in required" }, { status: 401 });
 
 /* Validation -------------------------------------------------------- */

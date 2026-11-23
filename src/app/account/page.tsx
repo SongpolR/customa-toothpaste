@@ -81,6 +81,8 @@ const TABS: Tab[] = ["orders", "refills", "formulas", "help"];
 function SignedIn({ user }: { user: AccountUser }) {
   const { t } = useT();
   const [tab, setTab] = useState<Tab>("orders");
+  // staff accounts (ADMIN_EMAILS on the server) get the lab console from here
+  const { data: me } = useAccountData<{ admin: boolean }>("/api/account/me");
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-6">
@@ -96,7 +98,12 @@ function SignedIn({ user }: { user: AccountUser }) {
             <p className="label-text text-[12px] opacity-60 mt-1">{user.email}</p>
           </div>
         </div>
-        <button className="btn-ghost" onClick={() => signOut()}>{t("acct.signOut")}</button>
+        <div className="flex gap-3">
+          {me?.admin && (
+            <Link href="/admin" className="btn-primary">{t("acct.staff")} →</Link>
+          )}
+          <button className="btn-ghost" onClick={() => signOut()}>{t("acct.signOut")}</button>
+        </div>
       </div>
 
       <nav className="mt-12 flex gap-6 md:gap-10 border-b border-line overflow-x-auto" aria-label={t("acct.title")}>

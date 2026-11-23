@@ -32,6 +32,8 @@ export async function signInWithGoogle(returnTo = "/account") {
 
 export async function signOut() {
   await browserSupabase()?.auth.signOut();
+  // staff: leaving the account also closes the lab console session
+  await fetch("/api/admin/session", { method: "DELETE" }).catch(() => {});
 }
 
 /** fetch() with the customer's access token, for /api/account/* and friends. */

@@ -35,6 +35,8 @@ export default function Nav() {
   const links = [
     { href: "/compose", label: t("nav.compose") },
     { href: "/quiz", label: t("nav.quiz") },
+    // guests (and anyone with an order number) can check status without an account
+    { href: "/track", label: t("nav.track") },
   ];
 
   return (

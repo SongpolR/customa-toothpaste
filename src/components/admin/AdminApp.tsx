@@ -5,6 +5,8 @@ import Link from "next/link";
 import { BASES, BOOSTERS, BOX_PAPERS, BOX_SHAPES, CAPS, HERBS, SIZES, TUBE_PAPERS, byId } from "@/lib/catalog";
 import { fmtTHB, formulaNo, type Formula } from "@/lib/formula";
 import { listen } from "@/lib/supabase-browser";
+import { useAuth } from "@/lib/store";
+import { accountsEnabled, authFetch, signInWithGoogle } from "@/lib/auth-client";
 import { LabelCard } from "../ui";
 
 type Status = "pending_payment" | "paid" | "mixing" | "packing" | "shipped" | "delivered" | "cancelled";
@@ -77,8 +79,42 @@ function Login({ onDone }: { onDone: () => void }) {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const { user, ready } = useAuth();
+  const [notStaff, setNotStaff] = useState(false);
+
+  // Signed in with a staff Google account → open the console without a password.
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    authFetch("/api/admin/session", { method: "POST" }).then((r) => {
+      if (!alive) return;
+      if (r.ok) onDone();
+      else setNotStaff(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [user, onDone]);
+
+  if (!ready || (user && !notStaff)) return <div className="p-10 label-text text-sm opacity-60">Loading…</div>;
+
   return (
     <div className="min-h-screen grid place-items-center px-5">
+      <div className="w-full max-w-sm space-y-4">
+        {accountsEnabled() && (
+          <div className="paper-card !p-8 space-y-4">
+            <p className="keep-tracking label-text text-[13px] tracking-[0.4em] font-semibold">CUSTOMA</p>
+            <p className="label-text text-[11px] tracking-[0.2em] uppercase opacity-60">Lab console · staff</p>
+            {notStaff ? (
+              <p className="text-[13px]">
+                {user?.email} is not a staff account.{" "}
+                <Link href="/account" className="underline underline-offset-4">Back to account</Link>
+              </p>
+            ) : (
+              <button className="btn-primary w-full" onClick={() => signInWithGoogle("/admin")}>Sign in with Google</button>
+            )}
+          </div>
+        )}
       <form
         className="paper-card !p-10 w-full max-w-sm space-y-6"
         onSubmit={async (e) => {
@@ -102,6 +138,7 @@ function Login({ onDone }: { onDone: () => void }) {
         <button className="btn-primary w-full" disabled={busy}>{busy ? "…" : "Enter"}</button>
         <p className="label-text text-[10.5px] opacity-50">Set ADMIN_PASSWORD in .env.local. Local dev default: “customa”.</p>
       </form>
+      </div>
     </div>
   );
 }

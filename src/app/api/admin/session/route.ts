@@ -1,5 +1,5 @@
 import { hasSupabase } from "@/lib/db";
-import { adminChannel, checkAdminPassword, clearAdminSession, isAdmin, setAdminSession, stripe } from "@/lib/server";
+import { adminChannel, checkAdminPassword, clearAdminSession, getUser, isAdmin, isAdminEmail, setAdminSession, stripe } from "@/lib/server";
 
 export async function GET() {
   const admin = await isAdmin();
@@ -16,6 +16,14 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Staff signed in with Google (listed in ADMIN_EMAILS) get the console session directly.
+  const user = await getUser(req);
+  if (user) {
+    if (!isAdminEmail(user.email)) return Response.json({ error: "not staff" }, { status: 403 });
+    await setAdminSession();
+    return Response.json({ ok: true });
+  }
+  // Fallback: console password (local demo, or no Supabase)
   const body = await req.json().catch(() => null);
   const password = typeof body?.password === "string" ? body.password : "";
   // small fixed delay to blunt brute-force attempts

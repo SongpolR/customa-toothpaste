@@ -112,7 +112,6 @@ export default function HomeSections() {
         <div className="mx-auto max-w-[1400px] px-5 md:px-14 py-10 flex flex-col md:flex-row gap-4 justify-between label-text text-[11px] tracking-[0.18em] uppercase opacity-70">
           <span>CUSTOMA LABORATORY · {LIEU}</span>
           <span>{t("common.demo")}</span>
-          <Link href="/admin" className="hover:opacity-100">Staff</Link>
         </div>
       </footer>
     </div>
