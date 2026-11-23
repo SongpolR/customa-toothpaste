@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Classic request-time rendering: Customa is mostly client UI + API routes.
   turbopack: {
     rules: {
       "*.css": {
