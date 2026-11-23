@@ -34,7 +34,10 @@ function adminPassword(): string | null {
 }
 
 function secret() {
-  return process.env.ADMIN_SESSION_SECRET ?? adminPassword() ?? "unset";
+  const s = process.env.ADMIN_SESSION_SECRET || adminPassword();
+  // never sign console sessions with a guessable value on a live server
+  if (!s) throw new Error("ADMIN_SESSION_SECRET is not set");
+  return s;
 }
 
 function sign(value: string) {
@@ -71,6 +74,7 @@ export async function clearAdminSession() {
 export async function isAdmin(): Promise<boolean> {
   const raw = (await cookies()).get(COOKIE)?.value;
   if (!raw) return false;
+  if (!process.env.ADMIN_SESSION_SECRET && !adminPassword()) return false;
   const [exp, sig] = raw.split(".");
   if (!exp || !sig || Number(exp) < Date.now()) return false;
   return safeEqual(sig, sign(`admin.${exp}`));
@@ -86,7 +90,11 @@ export function unauthorized() {
 export const threadChannel = (threadId: string, token: string) => `chat-${threadId}-${token}`;
 
 /** Admin inbox channel — name derived from the server secret, handed out only to admins. */
-export const adminChannel = () => `admin-${sign("inbox").slice(0, 24)}`;
+export const adminChannel = () => {
+  // without a session secret there is no console to notify (and customer chat must still work)
+  if (!process.env.ADMIN_SESSION_SECRET && !adminPassword()) return "admin-disabled";
+  return `admin-${sign("inbox").slice(0, 24)}`;
+};
 
 export async function broadcast(channel: string, event: string, payload: unknown) {
   if (!hasSupabase()) return; // local mode: clients poll instead
