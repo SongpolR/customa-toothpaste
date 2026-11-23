@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local demo database
 /.data
+
+# editor / IDE settings
+.idea/
