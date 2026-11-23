@@ -91,7 +91,7 @@ function Login({ onDone }: { onDone: () => void }) {
         }}
       >
         <div>
-          <p className="label-text text-[13px] tracking-[0.4em] font-semibold">CUSTOMA</p>
+          <p className="keep-tracking label-text text-[13px] tracking-[0.4em] font-semibold">CUSTOMA</p>
           <p className="label-text text-[11px] tracking-[0.2em] uppercase opacity-60 mt-1">Lab console</p>
         </div>
         <label className="block">
@@ -139,7 +139,7 @@ function Console({ session, onLogout }: { session: Session; onLogout: () => void
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-line bg-card">
         <div className="px-5 md:px-8 h-14 flex items-center gap-6 label-text text-[11px] tracking-[0.18em] uppercase">
-          <span className="text-[13px] tracking-[0.4em] font-semibold">CUSTOMA</span>
+          <span className="keep-tracking text-[13px] tracking-[0.4em] font-semibold">CUSTOMA</span>
           <span className="opacity-50 hidden sm:inline">Lab console</span>
           <nav className="flex gap-1 ml-4">
             {(["orders", "support"] as const).map((t) => (

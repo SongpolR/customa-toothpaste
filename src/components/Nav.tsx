@@ -44,7 +44,7 @@ export default function Nav() {
       }`}
     >
       <nav className="mx-auto max-w-[1400px] h-16 px-5 md:px-14 flex items-center justify-between label-text text-[11.5px] tracking-[0.18em] uppercase">
-        <Link href="/" className="text-[15px] tracking-[0.42em] font-semibold" aria-label="Customa home">
+        <Link href="/" className="keep-tracking text-[15px] tracking-[0.42em] font-semibold" aria-label="Customa home">
           CUSTOMA
         </Link>
         <div className="hidden md:flex items-center gap-6 lg:gap-9">

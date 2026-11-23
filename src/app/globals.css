@@ -62,6 +62,7 @@ body::before {
 }
 html[lang="th"] .display {
   font-family: var(--font-display-th), var(--font-display), serif;
+  font-weight: 300;
   letter-spacing: 0;
   line-height: 1.12;
 }
@@ -230,4 +231,11 @@ html[lang="th"] .display {
 
 input[type="range"].strength {
   accent-color: var(--ink);
+}
+
+/* Thai mode: the wide tracking used for small uppercase English labels pulls
+   Thai letters away from their vowels and tone marks, so words look broken.
+   Thai gets almost no tracking; only the CUSTOMA wordmark keeps its spacing. */
+html[lang="th"] :is(.label-text, .btn-primary, .btn-ghost, .field-label, .herb-tag strong, .herb-tag-no, [class*="tracking-"]):not(.keep-tracking) {
+  letter-spacing: 0.02em;
 }

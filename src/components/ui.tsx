@@ -14,7 +14,7 @@ export function LabelCard({ f, compact = false, kind = "tube" }: { f: Formula; c
     <div className={`label-text ${compact ? "p-2" : "p-4"}`} style={{ background: paper?.color }}>
       <div className={`bg-[#f6f3ea] text-ink ${compact ? "px-2.5 py-2 text-[8px]" : "px-5 py-4 text-[11px]"} leading-snug shadow-[2px_3px_0_rgba(0,0,0,0.08)]`}>
         <div className="flex justify-between items-baseline">
-          <span className={`font-semibold ${compact ? "tracking-[0.25em]" : "tracking-[0.4em]"}`}>CUSTOMA</span>
+          <span className={`keep-tracking font-semibold ${compact ? "tracking-[0.25em]" : "tracking-[0.4em]"}`}>CUSTOMA</span>
           <span>N°{formulaNo(f)}</span>
         </div>
         <div className="h-px bg-ink my-1.5" />
