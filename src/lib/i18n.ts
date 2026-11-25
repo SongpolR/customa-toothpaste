@@ -26,8 +26,8 @@ const dict = {
   },
   "hero.s3.title": { en: "Twelve herbs.\nYour ratio.", th: "สมุนไพร 12 ชนิด\nสัดส่วนของคุณ" },
   "hero.s3.body": {
-    en: "Peppermint for cool. Clove for ache. Turmeric for gums. Choose up to five and set how strong.",
-    th: "สะระแหน่ให้ความเย็น กานพลูบรรเทาปวด ขมิ้นชันดูแลเหงือก เลือกได้สูงสุด 5 ชนิด และปรับความเข้มเองได้",
+    en: "Peppermint for cool. Clove for warmth. Turmeric for depth. Choose up to five and set how strong.",
+    th: "สะระแหน่ให้ความเย็น กานพลูให้ความอุ่น ขมิ้นชันให้รสลุ่มลึก เลือกได้สูงสุด 5 ชนิด และปรับความเข้มเองได้",
   },
   "hero.s4.title": { en: "Your label.\nYour name.", th: "ฉลากของคุณ\nชื่อของคุณ" },
   "hero.s4.body": {

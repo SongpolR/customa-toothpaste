@@ -17,10 +17,10 @@ const QUESTIONS: Question[] = [
     q: { en: "What matters most for your mouth?", th: "เรื่องไหนสำคัญที่สุดสำหรับช่องปากคุณ?" },
     options: [
       { id: "breath", label: { en: "Fresh breath", th: "ลมหายใจสดชื่น" } },
-      { id: "gums", label: { en: "Gums that bleed easily", th: "เหงือกเลือดออกง่าย" } },
-      { id: "sensitive", label: { en: "Sensitive teeth", th: "ฟันเสียวง่าย" } },
-      { id: "white", label: { en: "Whiter teeth", th: "ฟันขาวขึ้น" } },
-      { id: "ache", label: { en: "Occasional toothache", th: "ปวดฟันเป็นบางครั้ง" } },
+      { id: "gums", label: { en: "Gentle on gums", th: "อ่อนโยนต่อเหงือก" } },
+      { id: "sensitive", label: { en: "Extra-gentle texture", th: "เนื้อละเอียดอ่อนโยน" } },
+      { id: "white", label: { en: "Brighter-looking smile", th: "ฟันดูขาวสะอาด" } },
+      { id: "ache", label: { en: "Warm, spicy herbal feel", th: "สมุนไพรรสเผ็ดอุ่น" } },
     ],
   },
   {
