@@ -9,7 +9,12 @@ export default function PrivacyPage() {
     <article className="pt-28 pb-24 mx-auto w-full max-w-3xl px-5 space-y-10 text-[15px] leading-relaxed">
       <header>
         <p className="label-text text-[11px] tracking-[0.3em] uppercase opacity-60">Customa · {LIEU}</p>
-        <h1 className="display text-5xl md:text-6xl mt-4">นโยบายความเป็นส่วนตัว</h1>
+        <h1 className="display text-5xl md:text-6xl mt-4">
+          {/* keep compound words whole when the title wraps on phones */}
+          <span className="whitespace-nowrap">นโยบาย</span>
+          <wbr />
+          <span className="whitespace-nowrap">ความเป็นส่วนตัว</span>
+        </h1>
         <p className="display text-2xl opacity-60 mt-1">Privacy policy</p>
         <p className="mt-6 opacity-75">
           Customa เป็นร้านค้าเดโม การชำระเงินทั้งหมดอยู่ในโหมดทดสอบของ Stripe ไม่มีการเรียกเก็บเงินจริง —

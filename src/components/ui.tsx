@@ -13,21 +13,25 @@ export function LabelCard({ f, compact = false, kind = "tube" }: { f: Formula; c
   return (
     <div className={`label-text ${compact ? "p-2" : "p-4"}`} style={{ background: paper?.color }}>
       <div className={`bg-[#f6f3ea] text-ink ${compact ? "px-2.5 py-2 text-[8px]" : "px-5 py-4 text-[11px]"} leading-snug shadow-[2px_3px_0_rgba(0,0,0,0.08)]`}>
-        <div className="flex justify-between items-baseline">
+        <div className="flex justify-between items-baseline gap-2">
           <span className={`keep-tracking font-semibold ${compact ? "tracking-[0.25em]" : "tracking-[0.4em]"}`}>CUSTOMA</span>
-          <span>N°{formulaNo(f)}</span>
+          {/* the thumbnail is too narrow for the number; the cart shows it beside the card */}
+          {!compact && <span className="whitespace-nowrap">N°{formulaNo(f)}</span>}
         </div>
         <div className="h-px bg-ink my-1.5" />
         <div className={`font-semibold uppercase ${compact ? "text-[11px]" : "text-[19px]"} leading-tight break-words`}>
           {f.name || "Untitled"}
         </div>
-        <div className="opacity-70 break-words">{kind === "box" && f.boxText.title ? f.boxText.title : "toothpaste · dentifrice"}</div>
+        {!compact && (
+          <div className="opacity-70 break-words">{kind === "box" && f.boxText.title ? f.boxText.title : "toothpaste\u00a0· dentifrice"}</div>
+        )}
         <div className="h-px bg-ink my-1.5" />
         {kind === "box" && f.boxText.message ? (
           <p className="whitespace-pre-wrap break-words">{f.boxText.message}</p>
         ) : (
           <>
-            <p>{herbLine(f) || "no herbs — pure base"}</p>
+            {/* non-breaking space before each dot so a wrapped line never starts with "·" */}
+            <p>{(herbLine(f) || "no herbs — pure base").replaceAll(" · ", "\u00a0· ")}</p>
             {!compact && <p className="opacity-65">base: {base?.name.en.toLowerCase()}</p>}
           </>
         )}

@@ -10,7 +10,12 @@ export default function TermsPage() {
     <article className="pt-28 pb-24 mx-auto w-full max-w-3xl px-5 space-y-10 text-[15px] leading-relaxed">
       <header>
         <p className="label-text text-[11px] tracking-[0.3em] uppercase opacity-60">Customa · {LIEU}</p>
-        <h1 className="display text-5xl md:text-6xl mt-4">ข้อกำหนดการใช้งาน</h1>
+        <h1 className="display text-5xl md:text-6xl mt-4">
+          {/* keep compound words whole when the title wraps on phones */}
+          <span className="whitespace-nowrap">ข้อกำหนด</span>
+          <wbr />
+          <span className="whitespace-nowrap">การใช้งาน</span>
+        </h1>
         <p className="display text-2xl opacity-60 mt-1">Terms of use</p>
       </header>
 

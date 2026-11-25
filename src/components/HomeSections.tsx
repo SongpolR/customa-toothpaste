@@ -74,10 +74,10 @@ export default function HomeSections() {
             <p className="label-text text-[11px] tracking-[0.3em] uppercase opacity-60 mb-4">N°07 ——— {lang === "th" ? "วัสดุ" : "Materials"}</p>
             <h2 className="display text-5xl md:text-7xl leading-[0.95]">{t("hero.s2.title")}</h2>
             <p className="mt-6 max-w-md opacity-75 leading-relaxed">{t("hero.s2.body")}</p>
-            <div className="mt-10 grid grid-cols-3 gap-6 label-text">
-              <div><div className="display text-5xl">0 g</div><div className="text-[10px] tracking-[0.2em] uppercase opacity-60 mt-2">{lang === "th" ? "พลาสติก" : "plastic"}</div></div>
-              <div><div className="display text-5xl">94%</div><div className="text-[10px] tracking-[0.2em] uppercase opacity-60 mt-2">{lang === "th" ? "กระดาษ FSC" : "FSC paper"}</div></div>
-              <div><div className="display text-5xl">12 wk</div><div className="text-[10px] tracking-[0.2em] uppercase opacity-60 mt-2">{lang === "th" ? "ย่อยสลาย" : "to compost"}</div></div>
+            <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-6 label-text">
+              <div><div className="display text-[clamp(1.75rem,9vw,3rem)] whitespace-nowrap">0 g</div><div className="text-[10px] tracking-[0.2em] uppercase opacity-60 mt-2">{lang === "th" ? "พลาสติก" : "plastic"}</div></div>
+              <div><div className="display text-[clamp(1.75rem,9vw,3rem)] whitespace-nowrap">94%</div><div className="text-[10px] tracking-[0.2em] uppercase opacity-60 mt-2">{lang === "th" ? "กระดาษ FSC" : "FSC paper"}</div></div>
+              <div><div className="display text-[clamp(1.75rem,9vw,3rem)] whitespace-nowrap">12 wk</div><div className="text-[10px] tracking-[0.2em] uppercase opacity-60 mt-2">{lang === "th" ? "ย่อยสลาย" : "to compost"}</div></div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
