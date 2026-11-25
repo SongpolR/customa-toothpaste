@@ -144,20 +144,83 @@ function font(size: number, weight = 400) {
   return `${weight} ${size}px ${labelFamily()}`;
 }
 
-function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
-  // split on ordinary spaces only, so a non-breaking space keeps words together
-  const words = text.split(/[ \t\n]+/).filter(Boolean);
-  const lines: string[] = [];
-  let line = "";
-  for (const word of words) {
-    const test = line ? line + " " + word : word;
-    if (ctx.measureText(test).width > maxW && line) {
-      lines.push(line);
-      line = word;
-    } else line = test;
+// Thai has no spaces between words, so break opportunities come from the
+// browser's word segmenter (dictionary based) rather than from spaces.
+const WORDS = typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter("th", { granularity: "word" }) : null;
+const CHARS = typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter("th", { granularity: "grapheme" }) : null;
+const OPENS = /[“‘(\[«]$/; // never end a line on these
+const CLOSES = /^[”’)\]»,.!?;:…ๆฯ]/; // never start a line with these
+
+function graphemes(s: string): string[] {
+  return CHARS ? Array.from(CHARS.segment(s), (x) => x.segment) : [...s];
+}
+
+/** Pieces of text a line may break between: words, spaces and punctuation glued to their word. */
+function breakUnits(text: string): string[] {
+  const raw = WORDS ? Array.from(WORDS.segment(text), (x) => x.segment) : text.split(/(\s+)/).filter(Boolean);
+  const out: string[] = [];
+  for (const seg of raw) {
+    const prev = out[out.length - 1];
+    // a non-breaking space keeps its neighbours together
+    if (prev !== undefined && (prev.endsWith(" ") || seg.startsWith(" ") || OPENS.test(prev) || CLOSES.test(seg))) {
+      out[out.length - 1] = prev + seg;
+    } else out.push(seg);
   }
-  if (line) lines.push(line);
+  return out;
+}
+
+function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+  const fits = (s: string) => ctx.measureText(s).width <= maxW;
+  const lines: string[] = [];
+  for (const para of text.split(/\r?\n/)) {
+    let line = "";
+    for (const unit of breakUnits(para)) {
+      const blank = /^[ \t]+$/.test(unit);
+      if (!line && blank) continue; // no leading spaces on a new line
+      if (fits((line + unit).trimEnd())) {
+        line += unit;
+        continue;
+      }
+      if (line.trim()) lines.push(line.trimEnd());
+      line = "";
+      if (blank) continue;
+      if (fits(unit)) {
+        line = unit;
+        continue;
+      }
+      // a single word wider than the label: break it between characters
+      for (const g of graphemes(unit)) {
+        if (line && !fits(line + g)) {
+          lines.push(line);
+          line = "";
+        }
+        line += g;
+      }
+    }
+    if (line.trim()) lines.push(line.trimEnd());
+  }
   return lines;
+}
+
+/** First `max` lines; if text was cut, end the last line with an ellipsis that still fits. */
+function clampLines(ctx: CanvasRenderingContext2D, lines: string[], max: number, maxW: number): string[] {
+  if (lines.length <= max) return lines;
+  const out = lines.slice(0, max);
+  let last = graphemes(out[max - 1].trimEnd());
+  while (last.length && ctx.measureText(last.join("") + "…").width > maxW) last = last.slice(0, -1);
+  out[max - 1] = last.join("").trimEnd() + "…";
+  return out;
+}
+
+/** Largest font size (stepping down) at which text wraps into at most `max` lines. Leaves ctx.font set. */
+function fitLines(ctx: CanvasRenderingContext2D, text: string, maxW: number, max: number, size: number, minSize: number, weight = 400) {
+  for (let s = size; s > minSize; s -= 4) {
+    ctx.font = font(s, weight);
+    const lines = wrap(ctx, text, maxW);
+    if (lines.length <= max) return { lines, size: s };
+  }
+  ctx.font = font(minSize, weight);
+  return { lines: clampLines(ctx, wrap(ctx, text, maxW), max, maxW), size: minSize };
 }
 
 /** letter-spaced text, Le Labo headers are widely tracked */
@@ -230,11 +293,11 @@ export function drawTube(canvas: HTMLCanvasElement, f: Formula) {
   rule(ctx, ix, y, iw, 3);
   y += 118;
 
-  ctx.font = font(80, 600);
-  const nameLines = wrap(ctx, (f.name || "Untitled").toUpperCase(), iw);
-  for (const line of nameLines.slice(0, 2)) {
+  // long names (Thai or Latin) shrink until they fit on two lines
+  const name = fitLines(ctx, (f.name || "Untitled").toUpperCase(), iw, 2, 80, 52, 600);
+  for (const line of name.lines) {
     ctx.fillText(line, ix, y);
-    y += 90;
+    y += Math.round(name.size * 1.12);
   }
   y -= 34;
   ctx.font = font(32);
@@ -245,7 +308,7 @@ export function drawTube(canvas: HTMLCanvasElement, f: Formula) {
 
   ctx.font = font(36);
   const herbs = herbLine(f) || "no herbs — pure base";
-  for (const line of wrap(ctx, herbs, iw).slice(0, 3)) {
+  for (const line of clampLines(ctx, wrap(ctx, herbs, iw), 3, iw)) {
     ctx.fillText(line, ix, y);
     y += 50;
   }
@@ -259,12 +322,14 @@ export function drawTube(canvas: HTMLCanvasElement, f: Formula) {
   y += 72;
 
   ctx.font = font(36);
+  // value column may wrap to a second line (long names, Thai text)
   const field = (k: string, v: string) => {
     ctx.globalAlpha = 0.65;
     ctx.fillText(k, ix, y);
     ctx.globalAlpha = 1;
-    ctx.fillText(v, ix + 170, y);
-    y += 56;
+    const lines = clampLines(ctx, wrap(ctx, v, iw - 170), 2, iw - 170);
+    lines.forEach((line, i) => ctx.fillText(line, ix + 170, y + i * 46));
+    y += 56 + (lines.length - 1) * 46;
   };
   field("for", f.tubeText.forName ? f.tubeText.forName : "—");
   field("date", DATE_FMT());
@@ -272,7 +337,7 @@ export function drawTube(canvas: HTMLCanvasElement, f: Formula) {
   if (f.tubeText.note) {
     ctx.font = font(32);
     ctx.globalAlpha = 0.85;
-    for (const line of wrap(ctx, `“${f.tubeText.note}”`, iw).slice(0, 2)) {
+    for (const line of clampLines(ctx, wrap(ctx, `“${f.tubeText.note}”`, iw), 2, iw)) {
       ctx.fillText(line, ix, y);
       y += 44;
     }
@@ -336,23 +401,24 @@ export function drawBoxFront(canvas: HTMLCanvasElement, f: Formula, w = BOX_TEX.
   ctx.textAlign = "center";
   ctx.fillText(`N°${formulaNo(f)}`, w / 2, y);
   y += 82;
-  ctx.font = font(52, 600);
-  for (const line of wrap(ctx, (f.name || "Untitled").toUpperCase(), iw).slice(0, 2)) {
+  const name = fitLines(ctx, (f.name || "Untitled").toUpperCase(), iw, 2, 52, 36, 600);
+  for (const line of name.lines) {
     ctx.fillText(line, w / 2, y);
-    y += 60;
+    y += Math.round(name.size * 1.15);
   }
   y += 10;
   ctx.font = font(24);
   ctx.globalAlpha = 0.7;
-  ctx.fillText(f.boxText.title ? f.boxText.title : "toothpaste · dentifrice", w / 2, y);
+  const titleLines = clampLines(ctx, wrap(ctx, f.boxText.title || "toothpaste · dentifrice", iw), 2, iw);
+  titleLines.forEach((line, i) => ctx.fillText(line, w / 2, y + i * 32));
   ctx.globalAlpha = 1;
-  y += 40;
+  y += 40 + (titleLines.length - 1) * 32;
   rule(ctx, ix, y, iw, 1.5);
   y += 60;
 
   ctx.font = font(26);
   const msg = f.boxText.message || herbLine(f, ", ");
-  for (const line of wrap(ctx, msg, iw).slice(0, 6)) {
+  for (const line of clampLines(ctx, wrap(ctx, msg, iw), 6, iw)) {
     ctx.fillText(line, w / 2, y);
     y += 38;
   }

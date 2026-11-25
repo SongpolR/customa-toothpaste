@@ -21,7 +21,7 @@ export function LabelCard({ f, compact = false, kind = "tube" }: { f: Formula; c
         <div className={`font-semibold uppercase ${compact ? "text-[11px]" : "text-[19px]"} leading-tight break-words`}>
           {f.name || "Untitled"}
         </div>
-        <div className="opacity-70">{kind === "box" && f.boxText.title ? f.boxText.title : "toothpaste · dentifrice"}</div>
+        <div className="opacity-70 break-words">{kind === "box" && f.boxText.title ? f.boxText.title : "toothpaste · dentifrice"}</div>
         <div className="h-px bg-ink my-1.5" />
         {kind === "box" && f.boxText.message ? (
           <p className="whitespace-pre-wrap break-words">{f.boxText.message}</p>
@@ -36,16 +36,16 @@ export function LabelCard({ f, compact = false, kind = "tube" }: { f: Formula; c
             <div className="h-px bg-ink/50 my-1.5" />
             <dl className="grid grid-cols-[52px_1fr] gap-y-0.5">
               <dt className="opacity-60">for</dt>
-              <dd className="break-words">{f.tubeText.forName || "—"}</dd>
+              <dd className="min-w-0 break-words">{f.tubeText.forName || "—"}</dd>
               <dt className="opacity-60">date</dt>
-              <dd>{date}</dd>
+              <dd className="whitespace-nowrap">{date}</dd>
               <dt className="opacity-60">lieu</dt>
-              <dd>{LIEU}</dd>
+              <dd className="whitespace-nowrap">{LIEU}</dd>
             </dl>
             {kind === "tube" && f.tubeText.note && <p className="mt-1 opacity-85 break-words">“{f.tubeText.note}”</p>}
-            <div className="flex justify-between mt-2 opacity-90">
-              <span>{size?.grams} g</span>
-              <span>paper · plastic-free</span>
+            <div className="flex justify-between gap-3 mt-2 opacity-90">
+              <span className="whitespace-nowrap">{size?.grams}&nbsp;g</span>
+              <span className="text-right">paper · plastic-free</span>
             </div>
           </>
         )}

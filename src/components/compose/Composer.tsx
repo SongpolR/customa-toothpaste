@@ -307,12 +307,13 @@ export default function Composer() {
                 <textarea className="field resize-none" rows={3} maxLength={120} value={f.boxText.message} onChange={(e) => c.setBoxText({ message: e.target.value })} placeholder={lang === "th" ? "ข้อความถึงคนพิเศษ…" : "a few words for someone…"} />
                 <Counter v={f.boxText.message} max={120} />
               </Group>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              {/* side by side from tablet up; on phones two cards would be ~160px wide and Thai text breaks mid-word */}
+              <div className="grid gap-6 sm:grid-cols-2 sm:gap-3">
+                <div className="min-w-0">
                   <p className="field-label mb-2">{t("c.view.tube")}</p>
                   <LabelCard f={f} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="field-label mb-2">{t("c.view.box")}</p>
                   <LabelCard f={f} kind="box" />
                 </div>
